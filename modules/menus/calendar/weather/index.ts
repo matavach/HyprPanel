@@ -14,18 +14,16 @@ const theWeather = Variable<Weather>(DEFAULT_WEATHER);
 const WeatherWidget = () => {
     return Widget.Box({
         class_name: "calendar-menu-item-container weather",
-        visible: key.bind("value").as(v => !(!v)),
+        visible: key.bind("value").as(k => !(!k)),
         child: Widget.Box({
             class_name: "weather-container-box",
             setup: (self) => {
-                if(key.bind("value").as(k => !k)){
+                if(key.bind("value").as(k => !k))
                     return;
-                }
+                
                 Utils.merge(
                     [key.bind("value"), interval.bind("value"), location.bind("value")],
                     (weatherKey, weatherInterval, loc) => {
-                        if(weatherKey == null)
-
                         Utils.interval(weatherInterval, () => {
                             const formattedLocation = loc.replace(" ", "%20");
                             Utils.execAsync(
