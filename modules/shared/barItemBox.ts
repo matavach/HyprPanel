@@ -1,4 +1,4 @@
-export const BarItemBox = (child) => {
+export const BarItemBox = (child, halign? : string) => {
     const computeVisible = () => {
         if (Object.hasOwnProperty.call(child, "isVis")) {
             return child.isVis.bind("value");
@@ -7,6 +7,7 @@ export const BarItemBox = (child) => {
     };
 
     return Widget.Button({
+
         class_name: `bar_item_box_visible ${Object.hasOwnProperty.call(child, "boxClass") ? child.boxClass : ""}`,
         child: child.component,
         visible: computeVisible(),

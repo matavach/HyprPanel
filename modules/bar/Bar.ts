@@ -14,6 +14,7 @@ const hyprland = await Service.import("hyprland");
 import { BarItemBox as WidgetContainer } from "../shared/barItemBox.js";
 import options from "options";
 import Gdk from "gi://Gdk?version=3.0";
+import { Align, PackType } from "types/@girs/gtk-3.0/gtk-3.0.cjs";
 
 const { layouts } = options.bar;
 
@@ -32,13 +33,14 @@ type Section = "battery"
     | "systray";
 
 type Layout = {
-    left: Section[],
+    left:  Section[],
     middle: Section[],
     right: Section[],
 }
 
 type BarLayout = {
     [key: string]: Layout
+    
 }
 
 const getModulesForMonitor = (monitor: number, curLayouts: BarLayout) => {
@@ -76,13 +78,13 @@ const widget = {
     battery: () => WidgetContainer(BatteryLabel()),
     dashboard: () => WidgetContainer(Menu()),
     workspaces: (monitor: number) => WidgetContainer(Workspaces(monitor, 10)),
-    windowtitle: () => WidgetContainer(ClientTitle()),
+    windowtitle: () => WidgetContainer(ClientTitle(), "end"),
     media: () => WidgetContainer(Media()),
-    notifications: () => WidgetContainer(Notifications()),
-    volume: () => WidgetContainer(Volume()),
-    network: () => WidgetContainer(Network()),
-    bluetooth: () => WidgetContainer(Bluetooth()),
-    clock: () => WidgetContainer(Clock()),
+    notifications: () => WidgetContainer(Notifications(), "end"),
+    volume: () => WidgetContainer(Volume(), "start"),
+    network: () => WidgetContainer(Network(), "start"),
+    bluetooth: () => WidgetContainer(Bluetooth(), "center"),
+    clock: () => WidgetContainer(Clock(), "end"),
     systray: () => WidgetContainer(SysTray()),
 };
 
@@ -230,42 +232,92 @@ export const Bar = (() => {
             anchor: ["top", "left", "right"],
             exclusivity: "exclusive",
             child: Widget.Box({
+                hexpand: true,
                 class_name: 'bar-panel-container',
                 child: Widget.CenterBox({
                     class_name: 'bar-panel',
+                    hexpand: true,
                     css: 'padding: 1px',
-                    startWidget: Widget.Box({
-                        class_name: "box-left",
-                        hexpand: true,
-                        setup: self => {
-                            self.hook(layouts, (self) => {
-                                const foundLayout = getModulesForMonitor(hyprlandMonitor, layouts.value as BarLayout);
-                                self.children = foundLayout.left.filter(mod => Object.keys(widget).includes(mod)).map(w => widget[w](hyprlandMonitor));
+                    // startWidget: Widget.Box({
+                    //     hexpand: true,
+                    //     class_name: "box-left",
+                    //     hpack: "start",
+                    //     setup: self => {
+                    //         self.hook(layouts, (self) => {
+                    //             const foundLayout = getModulesForMonitor(hyprlandMonitor, layouts.value as BarLayout);
+                    //         });
+                    //     },
+                    // }),
+                    // centerWidget: Widget.Box({
+                    //     class_name: "box-center",
+                    //     hpack: "center",
+                    //     setup: self => {
+                    //         self.hook(layouts, (self) => {
+                    //             const foundLayout = getModulesForMonitor(hyprlandMonitor, layouts.value as BarLayout);
+                    //         });
+                    //     },
+                    // }),
+                    // endWidget: Widget.Box({
+                    //     hpack: "end",
+                    //     class_name: "box-right",
+                    //     setup: self => {
+                    //         self.hook(layouts, (self) => {
+                    //             const foundLayout = getModulesForMonitor(hyprlandMonitor, layouts.value as BarLayout);
+                    //         })
+                    //     },
+                    // }),
+                    setup: self => {
+                        self.hook(layouts, (self) => {
+                            const foundLayout = getModulesForMonitor(hyprlandMonitor, layouts.value as BarLayout);
+                                                            
+
+                            self.start_widget = Widget.Box({
+                                hexpand: true,
+                                class_name: "box-left",
+                               //children: foundLayout.left.filter(mod => Object.keys(widget).includes(mod)).map(w => widget[w](hyprlandMonitor))
+                               setup: self => {
+                                const f = foundLayout.left.filter(mod => Object.keys(widget).includes(mod)).map(w => widget[w](hyprlandMonitor));
+                                self.pack_start(f[0], false, false, 0);
+                                self.pack_start(f[1], false, false, 0);
+                                self.pack_end(f[2], false, false, 0);
+                            }
                             });
-                        },
-                    }),
-                    centerWidget: Widget.Box({
-                        class_name: "box-center",
-                        hpack: "center",
-                        setup: self => {
-                            self.hook(layouts, (self) => {
-                                const foundLayout = getModulesForMonitor(hyprlandMonitor, layouts.value as BarLayout);
-                                self.children = foundLayout.middle.filter(mod => Object.keys(widget).includes(mod)).map(w => widget[w](hyprlandMonitor));
+                            self.center_widget = Widget.Box({
+                                class_name: "box-center",
+                                hpack: "center",
+                                setup: self => {
+                                    const f = foundLayout.middle.filter(mod => Object.keys(widget).includes(mod)).map(w => widget[w](hyprlandMonitor));
+                                    self.children = [f[0]]
+                                }
                             });
-                        },
-                    }),
-                    endWidget: Widget.Box({
-                        class_name: "box-right",
-                        hpack: "end",
-                        setup: self => {
-                            self.hook(layouts, (self) => {
-                                const foundLayout = getModulesForMonitor(hyprlandMonitor, layouts.value as BarLayout);
-                                self.children = foundLayout.right.filter(mod => Object.keys(widget).includes(mod)).map(w => widget[w](hyprlandMonitor));
+                            // self.center_widget = Widget.CenterBox({
+                            //     class_name: "box-center",
+                            //     hpack: "fill",
+                            //     setup: self => {
+                            //         const f = foundLayout.middle.filter(mod => Object.keys(widget).includes(mod)).map(w => widget[w](hyprlandMonitor))
+                            //         self.start_widget =  f[0];
+                            //         self.center_widget = f[Math.floor((f.length / 2 | 0))];
+                            //         self.end_widget = f[2];
+                            //     }
+                            // });
+                            self.end_widget = Widget.Box({
+                                class_name: "box-right",
+                                //hexpand: true,
+                                setup: self => {
+                                    const f = foundLayout.right.filter(mod => Object.keys(widget).includes(mod)).map(w => widget[w](hyprlandMonitor));
+                                    self.children = f;
+                                    const pack = PackType.START;
+                                    
+                                    self.set_child_packing(f[0], false, false, 0, pack);
+                                    self.halign = Align.END;
+                                }
                             });
-                        },
-                    }),
+                        });
+                        
+                    }
                 }),
             }),
+           
         });
     };
 })();
